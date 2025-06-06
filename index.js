@@ -29,7 +29,10 @@ client.on('connect', () => {
 
 client.on('message', async (topic, message) => {
   try {
-    const { waterLevel, batteryVoltage } = JSON.parse(message.toString());
+    const { calc_tinggi, calc_arus } = JSON.parse(message.toString());
+
+    const waterLevel = parseFloat(calc_tinggi);
+    const batteryVoltage = parseFloat(calc_arus);
 
     const result = await pool.query(
       'INSERT INTO sensor_readings (water_level, battery_voltage) VALUES ($1, $2) RETURNING *',
@@ -38,6 +41,7 @@ client.on('message', async (topic, message) => {
 
     console.log('✅ Saved to DB:', result.rows[0]);
   } catch (err) {
-    console.error('❌ Failed to process message:', err.message);
+    console.error('❌ Error processing message:', err.message);
   }
 });
+
