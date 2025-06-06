@@ -1,0 +1,12 @@
+{
+  "name": "mqtt-to-neon",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@vercel/postgres": "^1.2.0",
+    "mqtt": "^5.0.0"
+  }
+}
