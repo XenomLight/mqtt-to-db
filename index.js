@@ -1,35 +1,43 @@
 import mqtt from 'mqtt';
-import { sql } from '@vercel/postgres';
+import pkg from 'pg';
+const { Pool } = pkg;
 
-// ENV variables (will be set in Render)
+// Environment variables
 const mqttUrl = process.env.MQTT_URL;
 const mqttTopic = process.env.MQTT_TOPIC;
+const dbUrl = process.env.POSTGRES_URL;
 
+// Setup PostgreSQL connection pool
+const pool = new Pool({
+  connectionString: dbUrl,
+  ssl: { rejectUnauthorized: false }
+});
+
+// Connect to MQTT broker
 const client = mqtt.connect(mqttUrl);
 
 client.on('connect', () => {
   console.log('✅ Connected to MQTT broker');
   client.subscribe(mqttTopic, err => {
-    if (err) console.error('Failed to subscribe:', err);
-    else console.log(`📡 Subscribed to topic "${mqttTopic}"`);
+    if (err) {
+      console.error('❌ Subscription failed:', err.message);
+    } else {
+      console.log(`📡 Subscribed to topic: ${mqttTopic}`);
+    }
   });
 });
 
 client.on('message', async (topic, message) => {
   try {
-    const data = JSON.parse(message.toString());
+    const { waterLevel, batteryVoltage } = JSON.parse(message.toString());
 
-    const waterLevel = data.waterLevel;
-    const batteryVoltage = data.batteryVoltage;
-
-    const result = await sql`
-      INSERT INTO sensor_readings (water_level, battery_voltage)
-      VALUES (${waterLevel}, ${batteryVoltage})
-      RETURNING id, timestamp, water_level, battery_voltage, created_at
-    `;
+    const result = await pool.query(
+      'INSERT INTO sensor_readings (water_level, battery_voltage) VALUES ($1, $2) RETURNING *',
+      [waterLevel, batteryVoltage]
+    );
 
     console.log('✅ Saved to DB:', result.rows[0]);
   } catch (err) {
-    console.error('❌ Error handling message:', err.message);
+    console.error('❌ Failed to process message:', err.message);
   }
 });
