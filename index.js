@@ -7,22 +7,20 @@ const mqttUrl = process.env.MQTT_URL;
 const mqttTopic = process.env.MQTT_TOPIC;
 const dbUrl = process.env.POSTGRES_URL;
 
-// Setup PostgreSQL connection pool
 const pool = new Pool({
   connectionString: dbUrl,
   ssl: { rejectUnauthorized: false }
 });
 
-// Connect to MQTT broker
 const client = mqtt.connect(mqttUrl);
 
 client.on('connect', () => {
-  console.log('✅ Connected to MQTT broker');
+  console.log('Connected to MQTT broker');
   client.subscribe(mqttTopic, err => {
     if (err) {
-      console.error('❌ Subscription failed:', err.message);
+      console.error('Subscription failed:', err.message);
     } else {
-      console.log(`📡 Subscribed to topic: ${mqttTopic}`);
+      console.log(`Subscribed to topic: ${mqttTopic}`);
     }
   });
 });
@@ -39,9 +37,9 @@ client.on('message', async (topic, message) => {
       [waterLevel, batteryVoltage]
     );
 
-    console.log('✅ Saved to DB:', result.rows[0]);
+    console.log('Saved to DB:', result.rows[0]);
   } catch (err) {
-    console.error('❌ Error processing message:', err.message);
+    console.error('Error processing message:', err.message);
   }
 });
 
